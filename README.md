@@ -1,0 +1,2 @@
+### Hexlet tests and linter status:
+[![Actions Status](https://github.com/Nadezda1411/data-analytics-project-96/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/Nadezda1411/data-analytics-project-96/actions)
