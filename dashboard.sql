@@ -90,12 +90,14 @@ from results
 group by 1, 2
 order by 1, 3 desc;
 
+
 -- конверсия из клика в лид, из лида в оплату
 
 select
     ROUND(SUM(leads_count) / SUM(visitors_count) * 100, 2) as conversion_leads,
     ROUND(SUM(purchases_count) / SUM(leads_count) * 100, 2) as conversion_paid
 from results;
+
 
 -- суммарные затраты на рекламу и суммарная выручка
 
@@ -119,53 +121,53 @@ from results;
 
 select
     utm_source,
-    round(coalesce(sum(total_cost), 0) / sum(visitors_count), 2) as cpu,
-    round(coalesce(sum(total_cost), 0) / sum(leads_count), 2) as cpl,
-    round(coalesce(sum(total_cost), 0) / sum(purchases_count), 2) as cppu,
-    round((sum(revenue) - sum(total_cost)) / sum(total_cost) * 100, 2) as roi
+    ROUND(COALESCE(SUM(total_cost), 0) / SUM(visitors_count), 2) as cpu,
+    ROUND(COALESCE(SUM(total_cost), 0) / SUM(leads_count), 2) as cpl,
+    ROUND(COALESCE(SUM(total_cost), 0) / SUM(purchases_count), 2) as cppu,
+    ROUND((SUM(revenue) - SUM(total_cost)) / SUM(total_cost) * 100, 2) as roi
 from results
 group by 1
-having sum(total_cost) is not null;
+having SUM(total_cost) is not null;
 
 
 -- CPU по utm_medium
 
 select
     utm_medium,
-    round(coalesce(sum(total_cost), 0) / sum(visitors_count), 2) as cpu
+    ROUND(COALESCE(SUM(total_cost), 0) / SUM(visitors_count), 2) as cpu
 from results
 group by 1
-having sum(visitors_count) != 0;
+having SUM(visitors_count) != 0;
 
 
 -- CPL по utm_medium
 
 select
     utm_medium,
-    round(coalesce(sum(total_cost), 0) / sum(leads_count), 2) as cpl
+    ROUND(COALESCE(SUM(total_cost), 0) / SUM(leads_count), 2) as cpl
 from results
 group by 1
-having sum(leads_count) != 0;
+having SUM(leads_count) != 0;
 
 
 -- CPPU по utm_medium
 
 select
     utm_medium,
-    round(coalesce(sum(total_cost), 0) / sum(purchases_count), 2) as cppu
+    ROUND(COALESCE(SUM(total_cost), 0) / SUM(purchases_count), 2) as cppu
 from results
 group by 1
-having sum(purchases_count) != 0;
+having SUM(purchases_count) != 0;
 
 
 -- ROI по utm_medium
 
 select
     utm_medium,
-    round((sum(revenue) - sum(total_cost)) / sum(total_cost) * 100, 2) as roi
+    ROUND((SUM(revenue) - SUM(total_cost)) / SUM(total_cost) * 100, 2) as roi
 from results
 group by 1
-having sum(total_cost) != 0;
+having SUM(total_cost) != 0;
 
 
 -- CPU по utm_campaign
@@ -216,8 +218,8 @@ order by 2 desc;
 
 select
     utm_source,
-    SUM(COALESCE(total_cost, 0)) as source_total_cost,
-    SUM(COALESCE(revenue, 0)) as source_revenue
+    sum(coalesce(total_cost, 0)) as source_total_cost,
+    sum(coalesce(revenue, 0)) as source_revenue
 from results
 group by 1
 order by 2 desc, 3 desc;
@@ -289,43 +291,43 @@ order by 1;
 -- дата закрытия лидов
 
 with table1 as (
-select distinct on (s.visitor_id)
-    s.visitor_id,
-    s.visit_date,
-    s.source as utm_source,
-    s.medium as utm_medium,
-    s.campaign as utm_campaign,
-    l.lead_id,
-    l.created_at,
-    l.amount,
-    l.closing_reason,
-    l.status_id
-from sessions as s
-left join leads as l
-    on
-        s.visitor_id = l.visitor_id
-        and s.visit_date <= l.created_at
-where s.medium in ('cpc', 'cpm', 'cpa', 'youtube', 'cpp', 'tg', 'social')
-order by 1, 2 desc
+    select distinct on (s.visitor_id)
+        s.visitor_id,
+        s.visit_date,
+        s.source as utm_source,
+        s.medium as utm_medium,
+        s.campaign as utm_campaign,
+        l.lead_id,
+        l.created_at,
+        l.amount,
+        l.closing_reason,
+        l.status_id
+    from sessions as s
+    left join leads as l
+        on
+            s.visitor_id = l.visitor_id
+            and s.visit_date <= l.created_at
+    where s.medium in ('cpc', 'cpm', 'cpa', 'youtube', 'cpp', 'tg', 'social')
+    order by 1, 2 desc
 ),
 
 visitors_and_leads as (
-select * from table1
-order by 8 desc nulls last, 2, 3, 4, 5
+    select * from table1
+    order by 8 desc nulls last, 2, 3, 4, 5
 ),
 
 date_close as (
-select
-    lead_id,
-    created_at as date_close
-from visitors_and_leads
-where lead_id is not null
-order by 2
+    select
+        lead_id,
+        created_at as date_close
+    from visitors_and_leads
+    where lead_id is not null
+    order by 2
 )
 
 select
-date_close::date,
-COUNT(*) as leads_count
+    date_close::date,
+    COUNT(*) as leads_count
 from date_close
 group by 1
 order by 1;
