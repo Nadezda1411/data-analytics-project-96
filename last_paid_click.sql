@@ -21,4 +21,3 @@ with table1 as (
 
 select * from table1
 order by 8 desc nulls last, 2, 3, 4, 5;
-
